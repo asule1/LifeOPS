@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  password_hash String
+  full_name     String
+  role          String       @default("user")
+  is_active     Boolean      @default(true)
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  sessions      sessions[]
+  tasks         tasks[]
+  audit_logs    audit_logs[] @relation("AdminLogs")
+}
+
+model sessions {
+  id         String   @id @default(uuid())
+  user_id    String
+  token_hash String
+  expires_at DateTime
+  created_at DateTime @default(now())
+  is_revoked Boolean  @default(false)
+  user       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model tasks {
+  id          String    @id @default(uuid())
+  user_id     String
+  title       String
+  description String?
+  due_date    DateTime?
+  priority    String    @default("medium")
+  status      String    @default("todo")
+  tags        String[]  @default([])
+  created_at  DateTime  @default(now())
+  user        users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model audit_logs {
+  id             String   @id @default(uuid())
+  admin_id       String
+  action_type    String
+  target_user_id String?
+  details        Json?
+  created_at     DateTime @default(now())
+  admin          users    @relation("AdminLogs", fields: [admin_id], references: [id])
+}
